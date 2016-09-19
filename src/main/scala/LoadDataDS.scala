@@ -64,13 +64,18 @@ object LoadDataDS {
 
     // val filenames = Array("nc200852.dat", "nc200952.dat", "nc201052.dat", "nc201152.dat")
     // val filenames = Array("ct_tariffline_unlogged_2008.csv")
-    val filenames = Array("ct_tariffline_unlogged_2009.csv",
-                          "ct_tariffline_unlogged_2010.csv",
-                          "ct_tariffline_unlogged_2011.csv",
-                          "ct_tariffline_unlogged_2012.csv",
-                          "ct_tariffline_unlogged_2013.csv")
+    val filename = "ct_tariffline_unlogged_"
+    val fileext = ".csv"
+    val yrs = 2009 to 2013
+    val filenames = for (yr <- yrs) yield filename + yr.toString + fileext
 
-    for (filename <- filenames) {
+    // val filenames = Array("ct_tariffline_unlogged_2009.csv",
+    //                       "ct_tariffline_unlogged_2010.csv",
+    //                       "ct_tariffline_unlogged_2011.csv",
+    //                       "ct_tariffline_unlogged_2012.csv",
+    //                       "ct_tariffline_unlogged_2013.csv")
+    // for (filename <- filenames) {
+    for (filename <- filenames.toArray) {
       val s3bucket = sys.env("AWS_S3_BUCKET")
       val textfile = Paths.get(s3bucket, filename).toString
       val parquetfile = textfile.replace(".dat", ".parquet").replace(".csv", ".parquet")
