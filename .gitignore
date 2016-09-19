@@ -1,7 +1,8 @@
 # folders
-project/
+project/target/
 target/
 
 # ensime
+project/.ensime
 .ensime
 .ensime_cache/
