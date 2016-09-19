@@ -44,29 +44,39 @@ object LoadDataDS {
     // val origDir = Paths.get(sys.env("SWSDATA"), "faoswsTrade", "data", "original").toString
     // val warehouseDir = "s3a://us-west-2-databricks"
     // val warehouseLocation = "file:${system:user.dir}/spark-warehouse"
+    val warehouseLocation = "file:///C:/Users/Werthb/src/scala/sparkDemo/spark-warehouse"
 
     val spark = SparkSession
       .builder()
-      .master("local[4]")
+      .master("local[8]")
       .appName("Load Data")
     // .config("spark.sql.parquet.compression.codec", "snappy")
-      // .config("spark.sql.warehouse.dir", warehouseLocation)
+      .config("spark.sql.warehouse.dir", warehouseLocation)
       // .enableHiveSupport()
       .getOrCreate()
 
     // spark.conf.get("spark.sql.warehouse.dir")
 
-    val s3bucket = sys.env("AWS_S3_BUCKET")
 
     // val filename = "faosws/fcl_2_cpc.csv"
     // val filename = "nc200852.dat"
-    val filename = "ct_tariffline_unlogged_2008.csv"
+    // val filename = "ct_tariffline_unlogged_2008.csv"
 
-    val textfile = Paths.get(s3bucket, filename).toString
-    val parquetfile = textfile.replace(".dat", ".parquet").replace(".csv", ".parquet")
+    // val filenames = Array("nc200852.dat", "nc200952.dat", "nc201052.dat", "nc201152.dat")
+    // val filenames = Array("ct_tariffline_unlogged_2008.csv")
+    val filenames = Array("ct_tariffline_unlogged_2009.csv",
+                          "ct_tariffline_unlogged_2010.csv",
+                          "ct_tariffline_unlogged_2011.csv",
+                          "ct_tariffline_unlogged_2012.csv",
+                          "ct_tariffline_unlogged_2013.csv")
 
-    // runTextToParquet(spark = spark, textfile = textfile, parquetfile = parquetfile)
-    runShowParquet(spark = spark, parquetfile = parquetfile)
+    for (filename <- filenames) {
+      val s3bucket = sys.env("AWS_S3_BUCKET")
+      val textfile = Paths.get(s3bucket, filename).toString
+      val parquetfile = textfile.replace(".dat", ".parquet").replace(".csv", ".parquet")
+      runTextToParquet(spark = spark, textfile = textfile, parquetfile = parquetfile)
+      // runShowParquet(spark = spark, parquetfile = parquetfile)
+    }
 
     spark.stop()
   }
@@ -75,9 +85,9 @@ object LoadDataDS {
     import spark.implicits._
     // val parquetfile = textfile.replace(".csv", ".parquet").replace(".dat", ".parquet")
 
-    val classDS = spark.read.option("header", true).format("csv").load(textfile).as[fcl2cpc]
+    // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[fcl2cpc]
     // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[esclass]
-    // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
+    val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
 
     classDS.write.mode("overwrite").parquet(parquetfile)
   }
