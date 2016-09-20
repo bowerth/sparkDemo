@@ -62,19 +62,29 @@ object LoadDataDS {
 
     // val filenames = Array("nc200852.dat", "nc200952.dat", "nc201052.dat", "nc201152.dat")
     // val filenames = Array("ct_tariffline_unlogged_2008.csv")
-    val filename = "ct_tariffline_unlogged_"
-    val fileext = ".csv"
-    val yrs = 2008 to 2010
-    val filenames = for (yr <- yrs) yield filename + yr.toString + fileext
+    // val filename = "ct_tariffline_unlogged_"
+    // val fileext = ".csv"
+
     val s3bucket = sys.env("AWS_S3_BUCKET")
 
+    val fileprefix = "nc"
+    val fileext = "52.dat"
+    val folder = "nc52"
+
+    val yrs = 2012 to 2015
+    // val filenames = for (yr <- yrs) yield filename + yr.toString + fileext
+
     // for (filename <- filenames) {
-    for (filename <- filenames.toArray) {
+    // for (filename <- filenames.toArray) {
+    for (yr <- yrs.toArray) {
+      val filename = fileprefix + yr.toString + fileext
       val textfile = Paths.get(s3bucket, filename).toString
       // val parquetfile = textfile.replace(".dat", ".parquet").replace(".csv", ".parquet")
-      val parquetfile = Paths.get(s3bucket, "ct_tariffline_unlogged").toString
-      // runTextToParquet(spark = spark, textfile = textfile, parquetfile = parquetfile)
-      runShowParquet(spark = spark, parquetfile = parquetfile)
+      // val parquetfile = Paths.get(s3bucket, "ct_tariffline_unlogged").toString
+      val subfolder = "year=" + yr.toString
+      val parquetfile = Paths.get(s3bucket, folder, subfolder).toString
+      runTextToParquet(spark = spark, textfile = textfile, parquetfile = parquetfile)
+      // runShowParquet(spark = spark, parquetfile = parquetfile)
     }
 
     spark.stop()
