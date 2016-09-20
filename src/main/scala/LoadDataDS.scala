@@ -48,7 +48,7 @@ object LoadDataDS {
 
     val spark = SparkSession
       .builder()
-      .master("local[8]")
+      .master("local[4]")
       .appName("Load Data")
     // .config("spark.sql.parquet.compression.codec", "snappy")
       .config("spark.sql.warehouse.dir", warehouseLocation)
@@ -59,28 +59,22 @@ object LoadDataDS {
 
 
     // val filename = "faosws/fcl_2_cpc.csv"
-    // val filename = "nc200852.dat"
-    // val filename = "ct_tariffline_unlogged_2008.csv"
 
     // val filenames = Array("nc200852.dat", "nc200952.dat", "nc201052.dat", "nc201152.dat")
     // val filenames = Array("ct_tariffline_unlogged_2008.csv")
     val filename = "ct_tariffline_unlogged_"
     val fileext = ".csv"
-    val yrs = 2009 to 2013
+    val yrs = 2008 to 2010
     val filenames = for (yr <- yrs) yield filename + yr.toString + fileext
+    val s3bucket = sys.env("AWS_S3_BUCKET")
 
-    // val filenames = Array("ct_tariffline_unlogged_2009.csv",
-    //                       "ct_tariffline_unlogged_2010.csv",
-    //                       "ct_tariffline_unlogged_2011.csv",
-    //                       "ct_tariffline_unlogged_2012.csv",
-    //                       "ct_tariffline_unlogged_2013.csv")
     // for (filename <- filenames) {
     for (filename <- filenames.toArray) {
-      val s3bucket = sys.env("AWS_S3_BUCKET")
       val textfile = Paths.get(s3bucket, filename).toString
-      val parquetfile = textfile.replace(".dat", ".parquet").replace(".csv", ".parquet")
-      runTextToParquet(spark = spark, textfile = textfile, parquetfile = parquetfile)
-      // runShowParquet(spark = spark, parquetfile = parquetfile)
+      // val parquetfile = textfile.replace(".dat", ".parquet").replace(".csv", ".parquet")
+      val parquetfile = Paths.get(s3bucket, "ct_tariffline_unlogged").toString
+      // runTextToParquet(spark = spark, textfile = textfile, parquetfile = parquetfile)
+      runShowParquet(spark = spark, parquetfile = parquetfile)
     }
 
     spark.stop()
@@ -98,9 +92,13 @@ object LoadDataDS {
   }
 
   private def runShowParquet(spark: SparkSession, parquetfile: String): Unit = {
-    val parquetFileDF = spark.read.parquet(parquetfile)
+    // val parquetFileDF = spark.read.parquet(parquetfile)
+    val parquetFileDF = spark.read.option("mergeSchema", "true").parquet(parquetfile)
+    parquetFileDF.printSchema()
     parquetFileDF.createOrReplaceTempView("parquetTable")
     spark.sql("SELECT * FROM parquetTable LIMIT 10").show()
+    spark.sql("SELECT DISTINCT(year) FROM parquetTable LIMIT 10").show()
+
   }
 
   // private def runLoadTLData(spark: SparkSession, year: Int): Unit = {
