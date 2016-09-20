@@ -70,12 +70,12 @@ object LoadDataDS {
     val fileprefix = "nc"
     val fileext = "52.dat"
     val folder = "nc52"
-
     val yrs = 2012 to 2015
     // val filenames = for (yr <- yrs) yield filename + yr.toString + fileext
 
     // for (filename <- filenames) {
     // for (filename <- filenames.toArray) {
+    // val yr = 2012
     for (yr <- yrs.toArray) {
       val filename = fileprefix + yr.toString + fileext
       val textfile = Paths.get(s3bucket, filename).toString
@@ -95,8 +95,8 @@ object LoadDataDS {
     // val parquetfile = textfile.replace(".csv", ".parquet").replace(".dat", ".parquet")
 
     // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[fcl2cpc]
-    // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[esclass]
-    val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
+    val classDS = spark.read.option("header", true).format("csv").load(textfile).as[esclass]
+    // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
 
     classDS.write.mode("overwrite").parquet(parquetfile)
   }
