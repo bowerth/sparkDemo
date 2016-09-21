@@ -11,17 +11,32 @@ object LoadDataDS {
 
   case class fcl2cpc(fcl: String, cpc: String)
 
-  case class esclass(DECLARANT: String,
-                     PARTNER: String,
-                     PRODUCT_NC: String,
-                     FLOW: String,
-                     STAT_REGIME: String,
-                     PERIOD: String,
+  // // Eurostat Bulk Download
+  // case class esclass(DECLARANT: String,
+  //                    PARTNER: String,
+  //                    PRODUCT_NC: String,
+  //                    FLOW: String,
+  //                    STAT_REGIME: String,
+  //                    PERIOD: String,
+  //                    // precision and scale of decimal type
+  //                    // according to comext support
+  //                    VALUE_1000ECU: String, // Double,
+  //                    QUANTITY_TON: String, // Double,
+  //                    SUP_QUANTITY: String) // Double
+
+  // Eurostat SWS
+  case class esclass(chapter: String,
+                     declarant: String,
+                     partner: String,
+                     product_nc: String,
+                     flow: String,
+                     stat_regime: String,
+                     period: String,
                      // precision and scale of decimal type
                      // according to comext support
-                     VALUE_1000ECU: String, // Double,
-                     QUANTITY_TON: String, // Double,
-                     SUP_QUANTITY: String) // Double
+                     value_1k_euro: String, // Double,
+                     qty_ton: String, // Double,
+                     sup_quantity: String) // Double
 
   case class tlclass(chapter: String,
                      rep: String,
@@ -48,7 +63,7 @@ object LoadDataDS {
 
     val spark = SparkSession
       .builder()
-      .master("local[4]")
+      .master("local[8]")
       .appName("Load Data")
     // .config("spark.sql.parquet.compression.codec", "snappy")
       .config("spark.sql.warehouse.dir", warehouseLocation)
@@ -67,38 +82,59 @@ object LoadDataDS {
 
     val s3bucket = sys.env("AWS_S3_BUCKET")
 
-    val fileprefix = "nc"
-    val fileext = "52.dat"
-    val folder = "nc52"
-    val yrs = 2012 to 2015
+    // // Eurostat Bulk Download
+    // val fileprefix = "nc"
+    // val fileext = "52.dat"
+    // val folder = "nc52"
+
+    // Eurostat SWS
+    val fileprefix = "ce_combinednomenclature_unlogged_"
+    val fileext = ".csv"
+    val folder = "ce_combinednomenclature_unlogged"
+
+    // // SWS UNSD Tariffline
+    // val fileprefix = "ct_tariffline_unlogged_"
+    // val fileext = ".csv"
+    // val folder = "ct_tariffline_unlogged"
+
+    // use partitioed parquetfiles, partition by year
+    val parquetfolder = Paths.get(s3bucket, folder).toString
+    val timerange = 2000 to 2007
     // val filenames = for (yr <- yrs) yield filename + yr.toString + fileext
 
     // for (filename <- filenames) {
     // for (filename <- filenames.toArray) {
     // val yr = 2012
-    for (yr <- yrs.toArray) {
-      val filename = fileprefix + yr.toString + fileext
-      val textfile = Paths.get(s3bucket, filename).toString
-      // val parquetfile = textfile.replace(".dat", ".parquet").replace(".csv", ".parquet")
-      // val parquetfile = Paths.get(s3bucket, "ct_tariffline_unlogged").toString
-      val subfolder = "year=" + yr.toString
-      val parquetfile = Paths.get(s3bucket, folder, subfolder).toString
-      runTextToParquet(spark = spark, textfile = textfile, parquetfile = parquetfile)
-      // runShowParquet(spark = spark, parquetfile = parquetfile)
-    }
+
+    runTextToParquet(spark = spark, s3bucket = sys.env("AWS_S3_BUCKET"), fileprefix = fileprefix, fileext = fileext, timerange = timerange, parquetfolder = parquetfolder)
+
+    // runShowParquet(spark = spark, parquetfile = parquetfolder)
 
     spark.stop()
   }
 
-  private def runTextToParquet(spark: SparkSession, textfile: String, parquetfile: String): Unit = {
+  // private def runTextToParquet(spark: SparkSession, textfile: String, parquetfile: String): Unit = {
+  private def runTextToParquet(spark: SparkSession, s3bucket: String, fileprefix: String, fileext: String, timerange: Range, parquetfolder: String): Unit = {
+
     import spark.implicits._
+    for (year <- timerange.toArray) {
+      val filename = fileprefix + year.toString + fileext
+      val textfile = Paths.get(s3bucket, filename).toString
+      // val parquetfile = textfile.replace(".dat", ".parquet").replace(".csv", ".parquet")
+      // val parquetfile = Paths.get(s3bucket, "ct_tariffline_unlogged").toString
+      val subfolder = "year=" + year.toString
+      val parquetfile = Paths.get(parquetfolder, subfolder).toString
+      // runTextToParquet(spark = spark, textfile = textfile, parquetfile = parquetfile)
+
+      val classDS = spark.read.option("header", true).format("csv").load(textfile).as[esclass]
+      // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[fcl2cpc]
+      // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
+
+      classDS.write.mode("overwrite").parquet(parquetfile)
+    }
+
     // val parquetfile = textfile.replace(".csv", ".parquet").replace(".dat", ".parquet")
-
-    // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[fcl2cpc]
-    val classDS = spark.read.option("header", true).format("csv").load(textfile).as[esclass]
-    // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
-
-    classDS.write.mode("overwrite").parquet(parquetfile)
+    // classDS.write.mode("overwrite").parquet(parquetfile)
   }
 
   private def runShowParquet(spark: SparkSession, parquetfile: String): Unit = {
@@ -106,8 +142,16 @@ object LoadDataDS {
     val parquetFileDF = spark.read.option("mergeSchema", "true").parquet(parquetfile)
     parquetFileDF.printSchema()
     parquetFileDF.createOrReplaceTempView("parquetTable")
-    spark.sql("SELECT * FROM parquetTable LIMIT 10").show()
-    spark.sql("SELECT DISTINCT(year) FROM parquetTable LIMIT 10").show()
+    // spark.sql("SELECT * FROM parquetTable LIMIT 10").show()
+    // spark.sql("SELECT DISTINCT(year) FROM parquetTable LIMIT 10").show()
+
+    // find non-numeric in Eurostat SWS data
+    // spark.sql("SELECT COUNT() FROM parquetTable WHERE stat_regime =  '4'").show()
+    // spark.sql("SELECT period, year FROM parquetTable WHERE product_nc  = '43023010'").show(50)
+    spark.sql("SELECT year, stat_regime, COUNT(*) AS cnt FROM parquetTable GROUP BY year, stat_regime ORDER BY year, stat_regime").show(40) //  WHERE year BETWEEN 2008 AND 2013
+    // spark.sql("SELECT year, stat_regime, COUNT(*) AS cnt FROM parquetTable WHERE year = 2013 GROUP BY year, stat_regime ORDER BY year, stat_regime").show()
+    // result.count()
+    // spark.sql("SELECT value_1k_euro FROM parquetTable LIMIT 10").show()
 
   }
 
