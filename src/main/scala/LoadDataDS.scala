@@ -6,6 +6,7 @@ import org.apache.spark.sql.SparkSession
 // import org.apache.spark.sql.Row
 // import org.apache.spark.sql.types._
 import java.nio.file._
+import java.io.File
 
 object LoadDataDS {
 
@@ -57,6 +58,7 @@ object LoadDataDS {
   def main(args: Array[String]): Unit = {
 
     // val origDir = Paths.get(sys.env("SWSDATA"), "faoswsTrade", "data", "original").toString
+    val origDir = Paths.get(sys.env("DRYFAOFBS"), "data", "original").toString
     // val warehouseDir = "s3a://us-west-2-databricks"
     // val warehouseLocation = "file:${system:user.dir}/spark-warehouse"
     val warehouseLocation = "file:///C:/Users/Werthb/src/scala/sparkDemo/spark-warehouse"
@@ -91,6 +93,7 @@ object LoadDataDS {
     val fileprefix = "ce_combinednomenclature_unlogged_"
     val fileext = ".csv"
     val folder = "ce_combinednomenclature_unlogged"
+    val outfilename = Paths.get(origDir, "spark_count_statregime.csv").toString
 
     // // SWS UNSD Tariffline
     // val fileprefix = "ct_tariffline_unlogged_"
@@ -99,16 +102,20 @@ object LoadDataDS {
 
     // use partitioed parquetfiles, partition by year
     val parquetfolder = Paths.get(s3bucket, folder).toString
-    val timerange = 2000 to 2007
+    val timerange = 2014 to 2014
     // val filenames = for (yr <- yrs) yield filename + yr.toString + fileext
 
     // for (filename <- filenames) {
     // for (filename <- filenames.toArray) {
     // val yr = 2012
 
-    runTextToParquet(spark = spark, s3bucket = sys.env("AWS_S3_BUCKET"), fileprefix = fileprefix, fileext = fileext, timerange = timerange, parquetfolder = parquetfolder)
+    // runTextToParquet(spark = spark, s3bucket = sys.env("AWS_S3_BUCKET"), fileprefix = fileprefix, fileext = fileext, timerange = timerange, parquetfolder = parquetfolder)
 
-    // runShowParquet(spark = spark, parquetfile = parquetfolder)
+
+    val runShowParquetText = runShowParquet(spark = spark, parquetfile = parquetfolder, show = true, outfilename = outfilename)
+    // val message = runShowParquet(spark = spark, parquetfile = parquetfolder, show = false, outfile = "")
+
+    println(runShowParquetText)
 
     spark.stop()
   }
@@ -126,9 +133,9 @@ object LoadDataDS {
       val parquetfile = Paths.get(parquetfolder, subfolder).toString
       // runTextToParquet(spark = spark, textfile = textfile, parquetfile = parquetfile)
 
-      val classDS = spark.read.option("header", true).format("csv").load(textfile).as[esclass]
+      // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[esclass]
       // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[fcl2cpc]
-      // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
+      val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
 
       classDS.write.mode("overwrite").parquet(parquetfile)
     }
@@ -137,23 +144,94 @@ object LoadDataDS {
     // classDS.write.mode("overwrite").parquet(parquetfile)
   }
 
-  private def runShowParquet(spark: SparkSession, parquetfile: String): Unit = {
+  private def runShowParquet(spark: SparkSession, parquetfile: String, show: Boolean, outfilename: String): Unit = {
+
+    // // the function is returning a text message
+    // var messageText = ""
+
     // val parquetFileDF = spark.read.parquet(parquetfile)
     val parquetFileDF = spark.read.option("mergeSchema", "true").parquet(parquetfile)
     parquetFileDF.printSchema()
     parquetFileDF.createOrReplaceTempView("parquetTable")
-    // spark.sql("SELECT * FROM parquetTable LIMIT 10").show()
-    // spark.sql("SELECT DISTINCT(year) FROM parquetTable LIMIT 10").show()
 
     // find non-numeric in Eurostat SWS data
     // spark.sql("SELECT COUNT() FROM parquetTable WHERE stat_regime =  '4'").show()
     // spark.sql("SELECT period, year FROM parquetTable WHERE product_nc  = '43023010'").show(50)
-    spark.sql("SELECT year, stat_regime, COUNT(*) AS cnt FROM parquetTable GROUP BY year, stat_regime ORDER BY year, stat_regime").show(40) //  WHERE year BETWEEN 2008 AND 2013
-    // spark.sql("SELECT year, stat_regime, COUNT(*) AS cnt FROM parquetTable WHERE year = 2013 GROUP BY year, stat_regime ORDER BY year, stat_regime").show()
+
+    val selectedData = spark.sql("SELECT year, stat_regime, COUNT(*) AS cnt FROM parquetTable GROUP BY year, stat_regime ORDER BY year DESC, stat_regime").cache() //  WHERE year BETWEEN 2008 AND 2013
+    // +----+-----------+--------+
+    // |year|stat_regime|     cnt|
+    // +----+-----------+--------+
+    // |2000|          3|  243967|
+    // |2000|          4| 8720865|
+    // |2000|          5|  687259|
+    // |2000|          6|  124958|
+    // |2000|          7|   29281|
+    // |2001|          3|  244792|
+    // |2001|          4| 8838263|
+    // |2001|          5|  687988|
+    // |2001|          6|  104966|
+    // |2001|          7|   26688|
+    // |2002|          3|  247250|
+
+    if (show == true) {
+      selectedData.show(100)
+      // messageText = messageText + "showing data"
+    }
+
+    if (outfilename != "") {
+
+      val tmpParquetDir = "Posts.tmp.parquet"
+
+      // selectedData.coalesce(1).write
+      //   // .mode("append")
+      //   // .format("com.databricks.spark.csv")
+      //   .option("header", "true")
+      //   .save(outfile)
+      //   // .csv(outfile)
+
+      selectedData.repartition(1).write
+        .mode("overwrite")
+        // .format("com.databricks.spark.csv")
+        .format("csv")
+      // .option("header", header.toString)
+        .option("header", "true")
+      // .option("delimiter", sep)
+        .save(tmpParquetDir)
+
+      val dir = new File(tmpParquetDir)
+      val outfile = new File(outfilename)
+      if (outfile.exists) outfile.delete
+      val tmpTsvFileName = dir.list.filter(_.endsWith(".csv"))(0)
+      val tmpTsvFile = tmpParquetDir + File.separatorChar + tmpTsvFileName
+        (new File(tmpTsvFile)).renameTo(outfile)
+      dir.listFiles.foreach( f => f.delete )
+      dir.delete
+
+      // messageText = messageText + "\n" + "result stored in " + outfile
+
+    }
+
+    // return(selectedData.getClass.toString)
+    // return(messageText)
     // result.count()
-    // spark.sql("SELECT value_1k_euro FROM parquetTable LIMIT 10").show()
 
   }
+
+  // def saveDfToCsv(df: org.apache.spark.sql.Dataset, tsvOutput: String,
+  //                 sep: String = ",", header: Boolean = false): Unit = {
+  //   val tmpParquetDir = "Posts.tmp.parquet"
+  //   df.repartition(1).write.
+  //     format("com.databricks.spark.csv").
+  //     option("header", header.toString).
+  //     option("delimiter", sep).
+  //     save(tmpParquetDir)
+  //   val dir = new File(tmpParquetDir)
+  //   val tmpTsvFile = tmpParquetDir + File.separatorChar + "part-00000"
+  //     (new File(tmpTsvFile)).renameTo(new File(tsvOutput))
+  //   dir.listFiles.foreach( f => f.delete )
+  //   dir.delete
+  // }
 
   // private def runLoadTLData(spark: SparkSession, year: Int): Unit = {
 
