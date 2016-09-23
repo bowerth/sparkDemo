@@ -59,8 +59,8 @@ object LoadDataDS {
 
     // val origDir = Paths.get(sys.env("SWSDATA"), "faoswsTrade", "data", "original").toString
     val origDir = Paths.get(sys.env("DRYFAOFBS"), "data", "original").toString
-    // val warehouseDir = "s3a://us-west-2-databricks"
-    // val warehouseLocation = "file:${system:user.dir}/spark-warehouse"
+    val s3bucket = sys.env("AWS_S3_BUCKET")
+    // need to specify on windows, path of default dir not normalized
     val warehouseLocation = "file:///C:/Users/Werthb/src/scala/sparkDemo/spark-warehouse"
 
     val spark = SparkSession
@@ -74,15 +74,12 @@ object LoadDataDS {
 
     // spark.conf.get("spark.sql.warehouse.dir")
 
-
     // val filename = "faosws/fcl_2_cpc.csv"
 
     // val filenames = Array("nc200852.dat", "nc200952.dat", "nc201052.dat", "nc201152.dat")
     // val filenames = Array("ct_tariffline_unlogged_2008.csv")
     // val filename = "ct_tariffline_unlogged_"
     // val fileext = ".csv"
-
-    val s3bucket = sys.env("AWS_S3_BUCKET")
 
     // // Eurostat Bulk Download
     // val fileprefix = "nc"
