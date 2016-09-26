@@ -82,14 +82,12 @@ object LoadDataDS {
 
     // spark.conf.get("spark.sql.warehouse.dir")
 
-
     // val filename = "faosws/fcl_2_cpc.csv"
 
     // val filenames = Array("nc200852.dat", "nc200952.dat", "nc201052.dat", "nc201152.dat")
     // val filenames = Array("ct_tariffline_unlogged_2008.csv")
     // val filename = "ct_tariffline_unlogged_"
     // val fileext = ".csv"
-
 
     // // Eurostat Bulk Download
     // val fileprefix = "nc"
@@ -165,23 +163,10 @@ object LoadDataDS {
     // spark.sql("SELECT COUNT() FROM parquetTable WHERE stat_regime =  '4'").show()
     // spark.sql("SELECT period, year FROM parquetTable WHERE product_nc  = '43023010'").show(50)
 
-    // val selectedData = spark.sql("SELECT year, stat_regime, COUNT(*) AS cnt FROM parquetTable GROUP BY year, stat_regime ORDER BY year DESC, stat_regime").cache() //  WHERE year BETWEEN 2008 AND 2013
-    // +----+-----------+--------+
-    // |year|stat_regime|     cnt|
-    // +----+-----------+--------+
-    // |2000|          3|  243967|
-    // |2000|          4| 8720865|
-    // |2000|          5|  687259|
-    // |2000|          6|  124958|
-    // |2000|          7|   29281|
-    // |2001|          3|  244792|
-    // |2001|          4| 8838263|
-    // |2001|          5|  687988|
-    // |2001|          6|  104966|
-    // |2001|          7|   26688|
-    // |2002|          3|  247250|
+    // val outfilename = Paths.get(origDir, "spark_count_statregime.csv").toString
+    // val selectedData = spark.sql("SELECT year, stat_regime, COUNT(*) AS cnt FROM parquetTable GROUP BY year, stat_regime ORDER BY year DESC, stat_regime").cache()
 
-    val selectedData = spark.sql("SELECT year, hsrep, COUNT(*) AS cnt FROM parquetTable GROUP BY year, hsrep ORDER BY year, hsrep").cache() // BY year DESC
+    val selectedData = spark.sql("SELECT year, hsrep, COUNT(*) AS cnt FROM parquetTable GROUP BY year, hsrep ORDER BY year DESC, hsrep").cache()
 
     if (show == true) {
       selectedData.show(100)
