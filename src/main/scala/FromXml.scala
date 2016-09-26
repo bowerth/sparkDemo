@@ -1,28 +1,31 @@
 
-class Uncs(var symbol: String, var businessName: String, var price: Double) {
+class Uncs(var reporter: String, var time: String, var cl: String) {
 
   // (a) convert Uncs fields to XML
   def toXml = {
     <uncs>
-      <symbol>{symbol}</symbol>
-      <businessName>{businessName}</businessName>
-      <price>{price}</price>
+      <reporter>{reporter}</reporter>
+      <time>{time}</time>
+      <cl>{cl}</cl>
     </uncs>
   }
 
   override def toString = 
-    s"symbol: $symbol, businessName: $businessName, price: $price"
+    s"reporter: $reporter, time: $time, cl: $cl"
 
 }
 
 object Uncs {
 
   // (b) convert XML to a Uncs
-  def fromXml(node: scala.xml.Node):Uncs = {
-    val symbol = (node \ "symbol").text
-    val businessName = (node \ "businessName").text
-    val price = (node \ "price").text.toDouble
-    new Uncs(symbol, businessName, price)
+  def fromXml(node: scala.xml.Node): Uncs = {
+    // val reporter = (node \\ "RPT").text
+    val reporter = ((node \\ "Group")(0) \ "@RPT").text
+    // val time = (node \\ "time").text
+    val time = ((node \\ "Group")(0) \ "@time").text
+    // val cl = (node \\ "CL").text.toDouble
+    val cl = ((node \\ "Group")(0) \ "@CL").text
+    new Uncs(reporter, time, cl)
   }
 
 }
@@ -39,8 +42,8 @@ object TestToFromXml extends App {
       <businessName>Google</businessName>
       <price>620.00</price>
     </stock>
-   val goog = Stock.fromXml(googXml)
-   println(goog)
+  //  val goog = Stock.fromXml(googXml)
+  //  println(goog)
 
    val tariffUncs = <uncs:DataSet>
       <uncs:Group RPT="400" time="2005" CL="H2" UNIT_MULT="1" DECIMALS="1" CURRENCY="USD" FREQ="A" TIME_FORMAT="P1Y" REPORTED_CLASSIFICATION="H2" FLOWS_IN_DATASET="MXR">
@@ -51,7 +54,8 @@ object TestToFromXml extends App {
       </uncs:Group>
     </uncs:DataSet>
     val comtr = Uncs.fromXml(tariffUncs)
-    print(comtr)
+  print(comtr)
+  // print("hello")
 
   // scala> (tariffUncs \\ "Obs")(0) \ "@PRT"
   // res4: scala.xml.NodeSeq = 392
