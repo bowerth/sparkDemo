@@ -14,7 +14,8 @@ libraryDependencies ++= Seq(
   "org.apache.spark" % "spark-hive_2.11" % "2.0.0",
   // https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-aws
   // "org.apache.hadoop" % "hadoop-aws" % "2.6.0",
-  "org.apache.hadoop" % "hadoop-aws" % "2.7.2"
+  "org.apache.hadoop" % "hadoop-aws" % "2.7.2",
+  "org.scala-lang.modules" % "scala-xml_2.11" % "1.0.6"
   // https://mvnrepository.com/artifact/org.apache.spark/spark-sql_2.10
   // "org.apache.spark" % "spark-sql_2.10" % "2.0.0"
 )
