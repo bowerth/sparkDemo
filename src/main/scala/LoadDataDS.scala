@@ -2,6 +2,7 @@ package org.fao.trade.load
 
 // import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
 // import org.apache.spark.sql.Encoder
+import org.fao.trade.xml.Uncs
 import org.apache.spark.sql.SparkSession
 // import org.apache.spark.sql.Row
 // import org.apache.spark.sql.types._
@@ -118,9 +119,48 @@ object LoadDataDS {
 
     // runTextToParquet(spark = spark, origS3bucket = sys.env("AWS_S3_BUCKET_ORIGINAL"), fileprefix = fileprefix, fileext = fileext, timerange = timerange, parquetfolder = parquetfolder)
 
-    runShowParquet(spark = spark, parquetfile = parquetfolder, show = true, outfilename = outfilename)
+    // runShowParquet(spark = spark, parquetfile = parquetfolder, show = true, outfilename = outfilename)
+
+    val xmlMessage = runXMLExample()
+    print("\n" + xmlMessage + "\n\n")
 
     spark.stop()
+  }
+
+  private def runXMLExample(): String = {
+
+    // (a) convert a Stock to its XML representation
+    // val aapl = new Stock("AAPL", "Apple", 600d)
+    // println(aapl.toXml)
+
+    // (b) convert an XML representation to a Stock
+    val googXml = <stock>
+      <symbol>GOOG</symbol>
+      <businessName>Google</businessName>
+      <price>620.00</price>
+      </stock>
+      //  val goog = Stock.fromXml(googXml)
+      //  println(goog)
+
+    val tariffUncs = <uncs:DataSet>
+      <uncs:Group RPT="400" time="2005" CL="H2" UNIT_MULT="1" DECIMALS="1" CURRENCY="USD" FREQ="A" TIME_FORMAT="P1Y" REPORTED_CLASSIFICATION="H2" FLOWS_IN_DATASET="MXR">
+      <uncs:Section TF="1" REPORTED_CURRENCY="JOD" CONVERSION_FACTOR="1.410440" VALUATION="CIF" TRADE_SYSTEM="Special" PARTNER="Origin">
+      <uncs:Obs CC-H2="442190900" PRT="392" netweight="438" qty="438" QU="8" value="2238.36828" EST="0" HT="0" />
+      <uncs:Obs CC-H2="442190900" PRT="422" netweight="88883" qty="88883" QU="8" value="385604.42292" EST="0" HT="0" />
+      </uncs:Section>
+      </uncs:Group>
+      </uncs:DataSet>
+    val comtr = Uncs.fromXml(tariffUncs).toString
+
+    return(comtr)
+    // print("hello")
+
+    // scala> (tariffUncs \\ "Obs")(0) \ "@PRT"
+    // res4: scala.xml.NodeSeq = 392
+
+    // scala> (tariffUncs \\ "Group")(0) \ "@RPT"
+    // res5: scala.xml.NodeSeq = 400
+
   }
 
   // private def runTextToParquet(spark: SparkSession, textfile: String, parquetfile: String): Unit = {
@@ -325,43 +365,26 @@ object LoadDataDS {
 
   // }
 
-  private def runJSONExample(spark: SparkSession): Unit = {
+  // private def runJSONExample(spark: SparkSession): Unit = {
 
-    // {"RPT":"400", "time":"2005", "CL":"H2", "UNIT_MULT":"1", "DECIMALS":"1", "CURRENCY":"USD", "FREQ":"A", "TIME_FORMAT":"P1Y", "REPORTED_CLASSIFICATION":"H2", "FLOWS_IN_DATASET":"MXR", "SECTIONS":[{ "TF":"1", "REPORTED_CURRENCY":"JOD", "CONVERSION_FACTOR":"1.410440", "VALUATION":"CIF", "TRADE_SYSTEM":"Special", "PARTNER":"Origin", "OBS":[{ "CC-H2":"442190900", "PRT":"392", "netweight":"438", "qty":"438", "QU":"8", "value":"2238.36828", "EST":"0", "HT":"0" }, { "CC-H2":"442190900", "PRT":"422", "netweight":"88883", "qty":"88883", "QU":"8", "value":"385604.42292", "EST":"0", "HT":"0" }]}]}
+  //   // {"RPT":"400", "time":"2005", "CL":"H2", "UNIT_MULT":"1", "DECIMALS":"1", "CURRENCY":"USD", "FREQ":"A", "TIME_FORMAT":"P1Y", "REPORTED_CLASSIFICATION":"H2", "FLOWS_IN_DATASET":"MXR", "SECTIONS":[{ "TF":"1", "REPORTED_CURRENCY":"JOD", "CONVERSION_FACTOR":"1.410440", "VALUATION":"CIF", "TRADE_SYSTEM":"Special", "PARTNER":"Origin", "OBS":[{ "CC-H2":"442190900", "PRT":"392", "netweight":"438", "qty":"438", "QU":"8", "value":"2238.36828", "EST":"0", "HT":"0" }, { "CC-H2":"442190900", "PRT":"422", "netweight":"88883", "qty":"88883", "QU":"8", "value":"385604.42292", "EST":"0", "HT":"0" }]}]}
 
-    import org.apache.spark.sql.functions._
-    import spark.implicits._
+  //   import org.apache.spark.sql.functions._
+  //   import spark.implicits._
 
-    val uncsDF = spark.read.format("json").load("examples/src/main/resources/uncs_simple_2.json")
+  //   val uncsDF = spark.read.format("json").load("examples/src/main/resources/uncs_simple_2.json")
 
-    uncsDF.select($"RPT", explode($"SECTIONS").as("SECTIONS_flat"))
-    val flattened = uncsDF.select($"RPT", explode($"SECTIONS").as("SECTIONS_flat"))
-    flattened.show()
+  //   uncsDF.select($"RPT", explode($"SECTIONS").as("SECTIONS_flat"))
+  //   val flattened = uncsDF.select($"RPT", explode($"SECTIONS").as("SECTIONS_flat"))
+  //   flattened.show()
 
-    val sections = flattened.select("RPT", "SECTIONS_flat.OBS")
-    sections.show()
+  //   val sections = flattened.select("RPT", "SECTIONS_flat.OBS")
+  //   sections.show()
 
-    val obs = sections.select($"RPT", explode($"OBS").as("OBS_flat"))
-    obs.show()
+  //   val obs = sections.select($"RPT", explode($"OBS").as("OBS_flat"))
+  //   obs.show()
 
-    // .explode($"OBS").as("OBS_flat"))
+  //   // .explode($"OBS").as("OBS_flat"))
 
-  }
-
-  private def runXMLExample(spark: SparkSession): Unit = {
-
-    val tariffUncs = <uncs:DataSet>
-      <uncs:Group RPT="400" time="2005" CL="H2" UNIT_MULT="1" DECIMALS="1" CURRENCY="USD" FREQ="A" TIME_FORMAT="P1Y" REPORTED_CLASSIFICATION="H2" FLOWS_IN_DATASET="MXR">
-      <uncs:Section TF="1" REPORTED_CURRENCY="JOD" CONVERSION_FACTOR="1.410440" VALUATION="CIF" TRADE_SYSTEM="Special" PARTNER="Origin">
-      <uncs:Obs CC-H2="442190900" PRT="392" netweight="438" qty="438" QU="8" value="2238.36828" EST="0" HT="0" />
-      <uncs:Obs CC-H2="442190900" PRT="422" netweight="88883" qty="88883" QU="8" value="385604.42292" EST="0" HT="0" />
-      </uncs:Section>
-      </uncs:Group>
-      </uncs:DataSet>
-
-    (tariffUncs \\ "Obs")(0) \ "@PRT"
-    (tariffUncs \\ "Group")(0) \ "@RPT"
-
-  }
-
+  // }
 }
