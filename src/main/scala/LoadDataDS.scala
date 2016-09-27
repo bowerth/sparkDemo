@@ -7,78 +7,30 @@ import org.apache.spark.sql.SparkSession
 // import org.apache.spark.sql.types._
 import java.nio.file._
 import java.io.File
+import org.fao.trade.xml.Uncs
+import models.fcl2cpc
+import models.esclass
+import models.tlclass
 
 object LoadDataDS {
 
-  case class fcl2cpc(fcl: String, cpc: String)
-
-  // // Eurostat Bulk Download
-  // case class esclass(DECLARANT: String,
-  //                    PARTNER: String,
-  //                    PRODUCT_NC: String,
-  //                    FLOW: String,
-  //                    STAT_REGIME: String,
-  //                    PERIOD: String,
-  //                    // precision and scale of decimal type
-  //                    // according to comext support
-  //                    VALUE_1000ECU: String, // Double,
-  //                    QUANTITY_TON: String, // Double,
-  //                    SUP_QUANTITY: String) // Double
-
-  // Eurostat SWS
-  case class esclass(chapter: String,
-                     declarant: String,
-                     partner: String,
-                     product_nc: String,
-                     flow: String,
-                     stat_regime: String,
-                     period: String,
-                     // precision and scale of decimal type
-                     // according to comext support
-                     value_1k_euro: String, // Double,
-                     qty_ton: String, // Double,
-                     sup_quantity: String) // Double
-
-  case class tlclass(chapter: String,
-                     rep: String,
-                     tyear: String,
-                     curr: String,
-                     hsrep: String,
-                     flow: String,
-                     repcurr: String,
-                     comm: String,
-                     prt: String,
-                     weight: String,
-                     qty: String,
-                     qunit: String,
-                     tvalue: String,
-                     est: String,
-                     ht: String)
-
   def main(args: Array[String]): Unit = {
 
-    // val origDir = Paths.get(sys.env("SWSDATA"), "faoswsTrade", "data", "original").toString
     val origDir = Paths.get(sys.env("DRYFAOFBS"), "data", "original").toString
-    // temporary
-    // val origDir = "/home/xps13/Dropbox/Analysis/dryworkflow/faofbs/data/original"
-    // val warehouseDir = "s3a://us-west-2-databricks"
-    // val warehouseLocation = "file:${system:user.dir}/spark-warehouse"
-    // Windows config
-    // val warehouseLocation = "file:///C:/Users/Werthb/src/scala/sparkDemo/spark-warehouse"
     val warehouseLocation = sys.env("SPARK_WAREHOUSE")
     val derivS3bucket = sys.env("AWS_S3_BUCKET_DERIVED")
     val origS3bucket = sys.env("AWS_S3_BUCKET_ORIGINAL")
     // sqlContext.setConf("spark.sql.parquet.compression.codec", "snappy")
     // %sql set spark.sql.parquet.compression.codec=snappy
 
-    val spark = SparkSession
-      .builder()
-      .master("local[8]")
-      .appName("Load Data")
-    // .config("spark.sql.parquet.compression.codec", "snappy")
-      .config("spark.sql.warehouse.dir", warehouseLocation)
-      // .enableHiveSupport()
-      .getOrCreate()
+    // val spark = SparkSession
+    //   .builder()
+    //   .master("local[8]")
+    //   .appName("Load Data")
+    // // .config("spark.sql.parquet.compression.codec", "snappy")
+    //   .config("spark.sql.warehouse.dir", warehouseLocation)
+    //   // .enableHiveSupport()
+    //   .getOrCreate()
 
     // spark.conf.get("spark.sql.warehouse.dir")
 
@@ -103,15 +55,22 @@ object LoadDataDS {
     // val outfilename = Paths.get(origDir, "spark_count_statregime.csv").toString
 
     // SWS UNSD Tariffline
-    val fileprefix = "ct_tariffline_unlogged_"
-    val fileext = ".csv"
-    val folder = "ct_tariffline_unlogged"
-    val outfilename = Paths.get(origDir, "spark_count_ct_tl_hsrep.csv").toString
+    // val fileprefix = "ct_tariffline_unlogged_"
+    // val fileext = ".csv"
+    // val folder = "ct_tariffline_unlogged"
+    // val outfilename = Paths.get(origDir, "spark_count_ct_tl_hsrep.csv").toString
     // val outfilename = ""
+
+    // hsfclmap2
+    val fileprefix = "hsfclmap2"
+    val fileext = ".csv.gz"
+    val folder = "hsfclmap2"
+    val outfilename = ""
 
     // use partitioed parquetfiles, partition by year
     val parquetfolder = Paths.get(derivS3bucket, folder).toString
-    val timerange = 2008 to 2014
+    // val timerange = 2008 to 2014
+    val timerange = null
     // val filenames = for (yr <- yrs) yield filename + yr.toString + fileext
 
     // for (filename <- filenames) {
@@ -120,9 +79,30 @@ object LoadDataDS {
 
     // runTextToParquet(spark = spark, origS3bucket = sys.env("AWS_S3_BUCKET_ORIGINAL"), fileprefix = fileprefix, fileext = fileext, timerange = timerange, parquetfolder = parquetfolder)
 
-    runShowParquet(spark = spark, parquetfile = parquetfolder, show = true, outfilename = outfilename)
+    // runShowParquet(spark = spark, parquetfile = parquetfolder, show = true, outfilename = outfilename)
 
-    spark.stop()
+    val XmlMessage = runReadXml()
+    print("\n" + XmlMessage + "\n\n")
+
+    // spark.stop()
+
+  }
+
+  private def runReadXml(): String = {
+
+    val tariffUncs = <uncs:DataSet>
+      <uncs:Group RPT="400" time="2005" CL="H2" UNIT_MULT="1" DECIMALS="1" CURRENCY="USD" FREQ="A" TIME_FORMAT="P1Y" REPORTED_CLASSIFICATION="H2" FLOWS_IN_DATASET="MXR">
+      <uncs:Section TF="1" REPORTED_CURRENCY="JOD" CONVERSION_FACTOR="1.410440" VALUATION="CIF" TRADE_SYSTEM="Special" PARTNER="Origin">
+      <uncs:Obs CC-H2="442190900" PRT="392" netweight="438" qty="438" QU="8" value="2238.36828" EST="0" HT="0" />
+      <uncs:Obs CC-H2="442190900" PRT="422" netweight="88883" qty="88883" QU="8" value="385604.42292" EST="0" HT="0" />
+      </uncs:Section>
+      </uncs:Group>
+      </uncs:DataSet>
+    val comtr = Uncs.fromXml(tariffUncs).toString
+    // print(comtr)
+
+    return(comtr)
+
   }
 
   // private def runTextToParquet(spark: SparkSession, textfile: String, parquetfile: String): Unit = {
