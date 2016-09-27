@@ -22,3 +22,6 @@ libraryDependencies ++= Seq(
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 
+// excludeFilter in unmanagedSources := HiddenFileFilter || "*impl*"
+// excludeFilter in unmanagedSources := ".#FromXml.scala"
+excludeFilter in unmanagedSources := ".#*"
