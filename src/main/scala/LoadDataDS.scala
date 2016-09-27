@@ -1,17 +1,18 @@
-package org.fao.trade.load
+package controller.load
 
 // import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
 // import org.apache.spark.sql.Encoder
-import org.fao.trade.xml.Uncs
 import org.apache.spark.sql.SparkSession
 // import org.apache.spark.sql.Row
 // import org.apache.spark.sql.types._
 import java.nio.file._
 import java.io.File
-import org.fao.trade.xml.Uncs
-import models.fcl2cpc
-import models.esclass
+// import models.fcl2cpc
+// import models.esclass
 import models.tlclass
+  // import org.fao.trade.xml.Uncs
+import models.Uncs
+import utils.sdmx
 
 object LoadDataDS {
 
@@ -80,44 +81,31 @@ object LoadDataDS {
 
     // runShowParquet(spark = spark, parquetfile = parquetfolder, show = true, outfilename = outfilename)
 
-    val xmlMessage = runXMLExample()
+    // runXmlDownload(url = "http://comtrade.un.org/ws/getsdmxtarifflinev1.aspx?px=H2&y=2005,2006&r=400&rg=1&p=392&cc=442190900&comp=false",
+    //                filename = "data/TariffLineSdmx.xml")
+
+    val xmlMessage = runXmlRead(filename = "data/TariffLineSdmx.xml")
     print("\n" + xmlMessage + "\n\n")
 
   }
 
-  private def runXMLExample(): String = {
+  private def runXmlDownload(url: String, filename: String): String = {
 
-    // (a) convert a Stock to its XML representation
-    // val aapl = new Stock("AAPL", "Apple", 600d)
-    // println(aapl.toXml)
+    sdmx.fileDownloader(url = url, filename = filename)
 
-    // (b) convert an XML representation to a Stock
-    val googXml = <stock>
-      <symbol>GOOG</symbol>
-      <businessName>Google</businessName>
-      <price>620.00</price>
-      </stock>
-      //  val goog = Stock.fromXml(googXml)
-      //  println(goog)
+  }
 
-    val tariffUncs = <uncs:DataSet>
-      <uncs:Group RPT="400" time="2005" CL="H2" UNIT_MULT="1" DECIMALS="1" CURRENCY="USD" FREQ="A" TIME_FORMAT="P1Y" REPORTED_CLASSIFICATION="H2" FLOWS_IN_DATASET="MXR">
-      <uncs:Section TF="1" REPORTED_CURRENCY="JOD" CONVERSION_FACTOR="1.410440" VALUATION="CIF" TRADE_SYSTEM="Special" PARTNER="Origin">
-      <uncs:Obs CC-H2="442190900" PRT="392" netweight="438" qty="438" QU="8" value="2238.36828" EST="0" HT="0" />
-      <uncs:Obs CC-H2="442190900" PRT="422" netweight="88883" qty="88883" QU="8" value="385604.42292" EST="0" HT="0" />
-      </uncs:Section>
-      </uncs:Group>
-      </uncs:DataSet>
-    val comtr = Uncs.fromXml(tariffUncs).toString
+  private def runXmlRead(filename: String): String = {
+
+    // val comtradeUrl = "http://comtrade.un.org/ws/getsdmxtarifflinev1.aspx?px=H2&y=2005,2006&r=400&rg=1&p=392&cc=442190900&comp=false"
+    // val xmlFilename = "data/TariffLineSdmx.xml"
+    // val xmlFile = new File(xmlFilename)
+
+    val xmlFile = new File(filename)
+    val tariffUncs = scala.xml.XML.loadFile(xmlFile)
+    val comtr = Uncs.fromXml(tariffUncs, group = 0, section = 0, obs = 0).toString
 
     return(comtr)
-    // print("hello")
-
-    // scala> (tariffUncs \\ "Obs")(0) \ "@PRT"
-    // res4: scala.xml.NodeSeq = 392
-
-    // scala> (tariffUncs \\ "Group")(0) \ "@RPT"
-    // res5: scala.xml.NodeSeq = 400
 
   }
 

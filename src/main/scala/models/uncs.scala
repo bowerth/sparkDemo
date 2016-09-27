@@ -1,4 +1,4 @@
-package org.fao.trade.xml
+package models
 
 class Uncs(
   // Group
@@ -43,7 +43,6 @@ class Uncs(
     s"rpt: $rpt, time: $time, cl: $cl, unit_mult: $unit_mult, decimals: $decimals, currency: $currency, freq: $freq, time_format: $time_format, reported_classification: $reported_classification, flows_in_dataset: $flows_in_dataset, tf: $tf, reported_currency: $reported_currency, conversion_factor: $conversion_factor, valuation: $valuation, trade_system: $trade_system, partner: $partner, cc: $cc, prt: $prt, netweight: $netweight, qty: $qty, qu: $qu, value: $value, est: $est, ht: $ht"
   // s"rpt: $rpt, prt: $prt, tf: $tf"
 
-
 }
 
 object Uncs {
@@ -57,34 +56,35 @@ object Uncs {
   //   new Uncs(rpt, prt, tf)
   // }
 
-  def fromXml(node: scala.xml.Node): Uncs = {
+  def fromXml(node: scala.xml.Node, group: Integer, section: Integer, obs: Integer): Uncs = {
 
-    val rpt = ((node \\ "Group")(0) \ "@RPT").text.toInt
-    val time = ((node \\ "Group")(0) \ "@time").text.toInt
-    val cl = ((node \\ "Group")(0) \ "@CL").text
-    val unit_mult = ((node \\ "Group")(0) \ "@UNIT_MULT").text.toInt
-    val decimals = ((node \\ "Group")(0) \ "@DECIMALS").text.toInt
-    val currency = ((node \\ "Group")(0) \ "@CURRENCY").text
-    val freq = ((node \\ "Group")(0) \ "@FREQ").text
-    val time_format = ((node \\ "Group")(0) \ "@TIME_FORMAT").text
-    val reported_classification = ((node \\ "Group")(0) \ "@REPORTED_CLASSIFICATION").text
-    val flows_in_dataset = ((node \\ "Group")(0) \ "@FLOWS_IN_DATASET").text
+    // break up into sub-classes: group, section, obs
+    val rpt = ((node \\ "Group")(group) \ "@RPT").text.toInt
+    val time = ((node \\ "Group")(group) \ "@time").text.toInt
+    val cl = ((node \\ "Group")(group) \ "@CL").text
+    val unit_mult = ((node \\ "Group")(group) \ "@UNIT_MULT").text.toInt
+    val decimals = ((node \\ "Group")(group) \ "@DECIMALS").text.toInt
+    val currency = ((node \\ "Group")(group) \ "@CURRENCY").text
+    val freq = ((node \\ "Group")(group) \ "@FREQ").text
+    val time_format = ((node \\ "Group")(group) \ "@TIME_FORMAT").text
+    val reported_classification = ((node \\ "Group")(group) \ "@REPORTED_CLASSIFICATION").text
+    val flows_in_dataset = ((node \\ "Group")(group) \ "@FLOWS_IN_DATASET").text
     // Section
-    val tf = ((node \\ "Section")(0) \ "@TF").text.toInt
-    val reported_currency = ((node \\ "Section")(0) \ "@REPORTED_CURRENCY").text
-    val conversion_factor = ((node \\ "Section")(0) \ "@CONVERSION_FACTOR").text.toDouble
-    val valuation = ((node \\ "Section")(0) \ "@VALUATION").text
-    val trade_system = ((node \\ "Section")(0) \ "@TRADE_SYSTEM").text
-    val partner = ((node \\ "Section")(0) \ "@PARTNER").text
+    val tf = ((node \\ "Section")(section) \ "@TF").text.toInt
+    val reported_currency = ((node \\ "Section")(section) \ "@REPORTED_CURRENCY").text
+    val conversion_factor = ((node \\ "Section")(section) \ "@CONVERSION_FACTOR").text.toDouble
+    val valuation = ((node \\ "Section")(section) \ "@VALUATION").text
+    val trade_system = ((node \\ "Section")(section) \ "@TRADE_SYSTEM").text
+    val partner = ((node \\ "Section")(section) \ "@PARTNER").text
     // Obs
-    val cc = ((node \\ "Obs")(0) \ "@CC-H2").text.toInt
-    val prt = ((node \\ "Obs")(0) \ "@PRT").text.toInt
-    val netweight = ((node \\ "Obs")(0) \ "@netweight").text.toDouble
-    val qty = ((node \\ "Obs")(0) \ "@qty").text.toDouble
-    val qu  = ((node \\ "Obs")(0) \ "@QU").text.toInt
-    val value = ((node \\ "Obs")(0) \ "@value").text.toDouble
-    val est = ((node \\ "Obs")(0) \ "@EST").text.toInt
-    val ht = ((node \\ "Obs")(0) \ "@HT").text.toInt
+    val cc = ((node \\ "Obs")(obs) \ "@CC-H2").text.toInt
+    val prt = ((node \\ "Obs")(obs) \ "@PRT").text.toInt
+    val netweight = ((node \\ "Obs")(obs) \ "@netweight").text.toDouble
+    val qty = ((node \\ "Obs")(obs) \ "@qty").text.toDouble
+    val qu  = ((node \\ "Obs")(obs) \ "@QU").text.toInt
+    val value = ((node \\ "Obs")(obs) \ "@value").text.toDouble
+    val est = ((node \\ "Obs")(obs) \ "@EST").text.toInt
+    val ht = ((node \\ "Obs")(obs) \ "@HT").text.toInt
 
     new Uncs(
       rpt = rpt,
