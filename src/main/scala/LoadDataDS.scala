@@ -8,11 +8,11 @@ import org.apache.spark.sql.SparkSession
 import java.nio.file._
 import java.io.File
 // import models.fcl2cpc
-// import models.esclass
+import models.esclass
 import models.tlclass
   // import org.fao.trade.xml.Uncs
 import models.Uncs
-import utils.sdmx
+import utils.fileUtils
 
 object LoadDataDS {
 
@@ -25,14 +25,15 @@ object LoadDataDS {
     // sqlContext.setConf("spark.sql.parquet.compression.codec", "snappy")
     // %sql set spark.sql.parquet.compression.codec=snappy
 
-    // val spark = SparkSession
-    //   .builder()
-    //   .master("local[8]")
-    //   .appName("Load Data")
-    // // .config("spark.sql.parquet.compression.codec", "snappy")
-    //   .config("spark.sql.warehouse.dir", warehouseLocation)
-    //   // .enableHiveSupport()
-    //   .getOrCreate()
+    val spark = SparkSession
+      .builder()
+      .master("local[4]")
+      .appName("Load Data")
+      // .config("spark.sql.parquet.compression.codec", "gzip")
+      .config("spark.sql.parquet.compression.codec", "snappy")
+      .config("spark.sql.warehouse.dir", warehouseLocation)
+      // .enableHiveSupport()
+      .getOrCreate()
 
     // spark.conf.get("spark.sql.warehouse.dir")
 
@@ -50,27 +51,28 @@ object LoadDataDS {
 
     // // Eurostat SWS
     // val fileprefix = "ce_combinednomenclature_unlogged_"
-    // val fileext = ".csv"
+    // val fileext = ".csv.gz"
     // val folder = "ce_combinednomenclature_unlogged"
-    // val outfilename = Paths.get(origDir, "spark_count_statregime.csv").toString
-
-    // SWS UNSD Tariffline
-    // val fileprefix = "ct_tariffline_unlogged_"
-    // val fileext = ".csv"
-    // val folder = "ct_tariffline_unlogged"
-    // val outfilename = Paths.get(origDir, "spark_count_ct_tl_hsrep.csv").toString
+    // // val outfilename = Paths.get(origDir, "spark_count_statregime.csv").toString
     // val outfilename = ""
 
-    // hsfclmap2
-    val fileprefix = "hsfclmap2"
+    // SWS UNSD Tariffline
+    val fileprefix = "ct_tariffline_unlogged_"
     val fileext = ".csv.gz"
-    val folder = "hsfclmap2"
+    val folder = "ct_tariffline_unlogged"
+    // val outfilename = Paths.get(origDir, "spark_count_ct_tl_hsrep.csv").toString
     val outfilename = ""
+
+    // // hsfclmap2
+    // val fileprefix = "hsfclmap2"
+    // val fileext = ".csv.gz"
+    // val folder = "hsfclmap2"
+    // val outfilename = ""
 
     // use partitioed parquetfiles, partition by year
     val parquetfolder = Paths.get(derivS3bucket, folder).toString
-    // val timerange = 2008 to 2014
-    val timerange = null
+    val timerange = 2000 to 2014
+    // val timerange = null
     // val filenames = for (yr <- yrs) yield filename + yr.toString + fileext
 
     // for (filename <- filenames) {
@@ -79,19 +81,21 @@ object LoadDataDS {
 
     // runTextToParquet(spark = spark, origS3bucket = sys.env("AWS_S3_BUCKET_ORIGINAL"), fileprefix = fileprefix, fileext = fileext, timerange = timerange, parquetfolder = parquetfolder)
 
-    // runShowParquet(spark = spark, parquetfile = parquetfolder, show = true, outfilename = outfilename)
+    runShowParquet(spark = spark, parquetfile = parquetfolder, show = true, outfilename = outfilename)
 
     // runXmlDownload(url = "http://comtrade.un.org/ws/getsdmxtarifflinev1.aspx?px=H2&y=2005,2006&r=400&rg=1&p=392&cc=442190900&comp=false",
     //                filename = "data/TariffLineSdmx.xml")
 
-    val xmlMessage = runXmlRead(filename = "data/TariffLineSdmx.xml")
-    print("\n" + xmlMessage + "\n\n")
+    // val xmlMessage = runXmlRead(filename = "data/TariffLineSdmx.xml")
+    // print("\n" + xmlMessage + "\n\n")
+
+    spark.stop
 
   }
 
   private def runXmlDownload(url: String, filename: String): String = {
 
-    sdmx.fileDownloader(url = url, filename = filename)
+    fileUtils.fileDownloader(url = url, filename = filename)
 
   }
 
@@ -122,11 +126,11 @@ object LoadDataDS {
       val parquetfile = Paths.get(parquetfolder, subfolder).toString
       // runTextToParquet(spark = spark, textfile = textfile, parquetfile = parquetfile)
 
-      // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[esclass]
+      val classDS = spark.read.option("header", true).format("csv").load(textfile).as[esclass]
       // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[fcl2cpc]
-      val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
+      // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
 
-      classDS.write.mode("overwrite").parquet(parquetfile)
+      classDS.repartition(8).write.mode("overwrite").parquet(parquetfile)
     }
 
     // val parquetfile = textfile.replace(".csv", ".parquet").replace(".dat", ".parquet")

@@ -56,6 +56,10 @@ object Uncs {
   //   new Uncs(rpt, prt, tf)
   // }
 
+  // var filename = "data/TariffLineSdmx.xml"
+  // val xmlFile = new java.io.File(filename)
+  // val tariffUncs = scala.xml.XML.loadFile(xmlFile)
+
   def fromXml(node: scala.xml.Node, group: Integer, section: Integer, obs: Integer): Uncs = {
 
     // break up into sub-classes: group, section, obs

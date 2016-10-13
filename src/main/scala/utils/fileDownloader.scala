@@ -5,7 +5,7 @@ import java.net.URL
 import java.io.File
 import scala.language.postfixOps
 
-object sdmx {
+object fileUtils {
 
   def fileDownloader(url: String, filename: String) = {
     new URL(url) #> new File(filename) !!
