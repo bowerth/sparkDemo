@@ -47,16 +47,15 @@ class Uncs(
 
 object Uncs {
 
-  // (b) convert XML to a Uncs
-  // def fromXml(node: scala.xml.Node): Uncs = {
-  //   val rpt = ((node \\ "Group")(0) \ "@RPT").text.toInt
-  //   val prt = ((node \\ "Obs")(0) \ "@PRT").text.toInt
-  //   // val tf = (node \ "tf").text.toDouble
-  //   val tf = ((node \\ "Section")(0) \ "@TF").text.toInt
-  //   new Uncs(rpt, prt, tf)
-  // }
-
   def fromXml(node: scala.xml.Node, group: Integer, section: Integer, obs: Integer): Uncs = {
+
+
+    // val url = "http://comtrade.un.org/ws/getsdmxtarifflinev1.aspx?px=H2&y=2005,2006&r=400&rg=1&p=392&cc=442190900&comp=false"
+    // val filename = "data/TariffLineSdmx.xml"
+    // utils.sdmx.fileDownloader(url = url, filename = filename)
+
+    // val xmlFile = new java.io.File(filename)
+    // val node = scala.xml.XML.loadFile(xmlFile)
 
     // break up into sub-classes: group, section, obs
     val rpt = ((node \\ "Group")(group) \ "@RPT").text.toInt
