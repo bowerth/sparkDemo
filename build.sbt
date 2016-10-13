@@ -22,5 +22,4 @@ libraryDependencies ++= Seq(
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 
-excludeFilter in unmanagedSources := ".#*"
-excludeFilter in unmanagedSources := "FromXml.scala"
+excludeFilter in Compile in unmanagedSources := ".#*" || "FromXml.scala"
