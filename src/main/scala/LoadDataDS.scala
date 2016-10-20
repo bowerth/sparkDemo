@@ -198,20 +198,10 @@ object LoadDataDS {
 
       val tmpParquetDir = "Posts.tmp.parquet"
 
-      // selectedData.coalesce(1).write
-      //   // .mode("append")
-      //   // .format("com.databricks.spark.csv")
-      //   .option("header", "true")
-      //   .save(outfile)
-      //   // .csv(outfile)
-
       selectedData.repartition(1).write
         .mode("overwrite")
-        // .format("com.databricks.spark.csv")
         .format("csv")
-      // .option("header", header.toString)
         .option("header", "true")
-      // .option("delimiter", sep)
         .save(tmpParquetDir)
 
       val dir = new File(tmpParquetDir)
@@ -222,8 +212,6 @@ object LoadDataDS {
         (new File(tmpTsvFile)).renameTo(outfile)
       dir.listFiles.foreach( f => f.delete )
       dir.delete
-
-      // messageText = messageText + "\n" + "result stored in " + outfile
 
     }
 
