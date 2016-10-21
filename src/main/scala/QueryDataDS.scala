@@ -7,7 +7,7 @@ object QueryDataDS {
 
   def main(args: Array[String]): Unit = {
 
-    val args = Array("ct_tariffline_unlogged", "chapter", "test.csv")
+    // val args = Array("ct_tariffline_unlogged", "chapter", "test.csv")
 
     val warehouseLocation = sys.env("SPARK_WAREHOUSE")
     val derivS3bucket = sys.env("AWS_S3_BUCKET_DERIVED")

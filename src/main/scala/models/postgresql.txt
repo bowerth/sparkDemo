@@ -1,0 +1,76 @@
+CREATE TABLE ess.adjustments
+(
+  adj_year integer,
+  adj_flow integer,
+  adj_hs character varying(50),
+  adj_fcl integer,
+  adj_partner integer,
+  adj_weight character varying(50),
+  adj_qty character varying(50),
+  adj_value character varying(50),
+  adj_special character varying(50),
+  adj_reporter integer,
+  __ts timestamp(3) without time zone DEFAULT now(),
+  __id bigserial NOT NULL
+)
+WITH (
+  OIDS=FALSE
+);
+
+CREATE UNLOGGED TABLE ess.ce_combinednomenclature_unlogged
+(
+  declarant character varying(50) NOT NULL,
+  partner character varying(50) NOT NULL,
+  product_nc character varying(50) NOT NULL,
+  flow character varying(1) NOT NULL,
+  stat_regime character varying(50) NOT NULL,
+  period character varying(10) NOT NULL,
+  value_1k_euro numeric(20,2),
+  qty_ton numeric(20,2),
+  sup_quantity numeric(20,2),
+  chapter character varying(50)
+)
+WITH (
+  OIDS=FALSE
+);
+
+CREATE TABLE ess.ct_tariffline_unlogged
+(
+  rep character varying(3) NOT NULL,
+  tyear character varying(4) NOT NULL,
+  curr character varying(3),
+  hsrep character varying(2),
+  flow character varying(1) NOT NULL,
+  repcurr character varying(3),
+  comm character varying(50) NOT NULL,
+  prt character varying(3) NOT NULL,
+  weight double precision,
+  qty double precision,
+  qunit character varying(2) NOT NULL,
+  tvalue double precision,
+  est character varying(1),
+  ht character varying(1),
+  chapter character varying(50)
+)
+WITH (
+  OIDS=FALSE
+);
+
+CREATE TABLE ess.hsfclmap2
+(
+  validyear integer,
+  area integer,
+  flow integer,
+  fromcode character varying(50),
+  tocode character varying(50),
+  fcl integer,
+  mdbyear integer,
+  mdbarea character varying(50),
+  mdbfcl character varying(50),
+  __id bigserial NOT NULL,
+  __ts timestamp(3) without time zone NOT NULL DEFAULT now(),
+  CONSTRAINT hsfclmap2_pkey PRIMARY KEY (__id)
+)
+WITH (
+  OIDS=FALSE
+);
