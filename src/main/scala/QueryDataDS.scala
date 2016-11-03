@@ -26,9 +26,13 @@ object QueryDataDS {
 
     selectedData.show(100)
 
+    // examples
+    // ce_combinednomenclature_unlogged
     // activator "run-main controller.query.QueryDataDS ce_combinednomenclature_unlogged stat_regime"
+    // ct_tariffline_unlogged
     //  activator "run-main controller.query.QueryDataDS ct_tariffline_unlogged hsrep"
     // activator "run-main controller.query.QueryDataDS ct_tariffline_unlogged chapter test.csv
+    // activator "run-main controller.query.QueryDataDS ct_tariffline_unlogged prt ct-year-prt.csv
 
     val outfilename = args(2)
 
