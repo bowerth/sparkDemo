@@ -138,6 +138,7 @@ object LoadDataDS {
       val parquetfile = Paths.get(parquetfolder, subfolder).toString
       // runTextToParquet(spark = spark, textfile = textfile, parquetfile = parquetfile)
 
+      // val classDS = spark.read.option("header", true).format("csv").load("ct_tariffline_unlogged_2014_sample.csv")
       val classDS = spark.read.option("header", true).format("csv").load(textfile).as[esclass]
       // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[fcl2cpc]
       // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
