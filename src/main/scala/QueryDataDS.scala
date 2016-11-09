@@ -21,18 +21,22 @@ object QueryDataDS {
     parquetFileDF.printSchema()
     parquetFileDF.createOrReplaceTempView("parquetTable")
 
+    // query 1
     val selectedData = spark.sql("SELECT year, " + args(1) + ", COUNT(*) AS cnt FROM parquetTable GROUP BY year, " + args(1) + " ORDER BY year DESC, " + args(1)).cache()
-
 
     selectedData.show(100)
 
-    // examples
+    // examples query1
     // ce_combinednomenclature_unlogged
-    // activator "run-main controller.query.QueryDataDS ce_combinednomenclature_unlogged stat_regime"
+    // activator "run-main controller.query.QueryDataDS ce_combinednomenclature_unlogged stat_ce_cn8_statregime"
+    // activator "run-main controller.query.QueryDataDS ce_combinednomenclature_unlogged declarant spark_count_ce_cn8_declarant.csv"
+    // activator "run-main controller.query.QueryDataDS ce_combinednomenclature_unlogged partner spark_count_ce_cn8_partner.csv"
     // ct_tariffline_unlogged
-    //  activator "run-main controller.query.QueryDataDS ct_tariffline_unlogged hsrep"
-    // activator "run-main controller.query.QueryDataDS ct_tariffline_unlogged chapter test.csv
-    // activator "run-main controller.query.QueryDataDS ct_tariffline_unlogged prt ct-year-prt.csv
+    // activator "run-main controller.query.QueryDataDS ct_tariffline_unlogged hsrep spark_count_ct_tl_hsrep.csv"
+    // activator "run-main controller.query.QueryDataDS ct_tariffline_unlogged chapter spark_count_ct_tl_chapter.csv"
+    // activator "run-main controller.query.QueryDataDS ct_tariffline_unlogged rep spark_count_ct_tl_rep.csv"
+    // activator "run-main controller.query.QueryDataDS ct_tariffline_unlogged prt spark_count_ct_tl_prt.csv"
+
 
     val outfilename = args(2)
 
