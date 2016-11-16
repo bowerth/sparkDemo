@@ -15,6 +15,7 @@ object QueryDataDS {
     val spark = SparkSession.builder().master("local[8]").appName("Load Data").config("spark.sql.parquet.compression.codec", "snappy").config("spark.sql.warehouse.dir", warehouseLocation).getOrCreate()
 
     val parquetfile = derivS3bucket + "/" + args(0)
+    // val parquetfile = derivS3bucket + "/" + "ct_tariffline_unlogged"
     // "ce_combinednomenclature_unlogged"
 
     val parquetFileDF = spark.read.option("mergeSchema", "true").parquet(parquetfile)
@@ -23,6 +24,9 @@ object QueryDataDS {
 
     // query 1
     val selectedData = spark.sql("SELECT year, " + args(1) + ", COUNT(*) AS cnt FROM parquetTable GROUP BY year, " + args(1) + " ORDER BY year DESC, " + args(1)).cache()
+
+
+    // val selectedData = spark.sql("SELECT year, hsrep, COUNT(*) AS cnt FROM parquetTable GROUP BY year, hsrep ORDER BY year DESC, hsrep").cache()
 
     selectedData.show(100)
 
@@ -39,6 +43,7 @@ object QueryDataDS {
 
 
     val outfilename = args(2)
+    // val outfilename = "spark_count_ct_tl_hsrep.csv"
 
     if (outfilename != "") {
 
