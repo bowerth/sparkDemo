@@ -32,9 +32,9 @@ object QueryDataDS {
 
     // examples query1
     // ce_combinednomenclature_unlogged
-    // activator "run-main controller.query.QueryDataDS ce_combinednomenclature_unlogged stat_ce_cn8_statregime"
     // activator "run-main controller.query.QueryDataDS ce_combinednomenclature_unlogged declarant spark_count_ce_cn8_declarant.csv"
     // activator "run-main controller.query.QueryDataDS ce_combinednomenclature_unlogged partner spark_count_ce_cn8_partner.csv"
+    // activator "run-main controller.query.QueryDataDS ce_combinednomenclature_unlogged statregime spark_count_ce_cn8_statregime.csv"
     // ct_tariffline_unlogged
     // activator "run-main controller.query.QueryDataDS ct_tariffline_unlogged hsrep spark_count_ct_tl_hsrep.csv"
     // activator "run-main controller.query.QueryDataDS ct_tariffline_unlogged chapter spark_count_ct_tl_chapter.csv"
@@ -56,7 +56,9 @@ object QueryDataDS {
         .save(tmpParquetDir)
 
       val dir = new File(tmpParquetDir)
+      // val outfolder = "data/derived"
       val outfile = new File(outfilename)
+      // val outfile = new File(outfolder + "/" + outfilename)
       if (outfile.exists) outfile.delete
       val tmpTsvFileName = dir.list.filter(_.endsWith(".csv"))(0)
       val tmpTsvFile = tmpParquetDir + File.separatorChar + tmpTsvFileName

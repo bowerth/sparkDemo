@@ -1,5 +1,7 @@
 package controller.load
 
+// activator "run-main controller.load.LoadDataDS"
+    
 // import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
 // import org.apache.spark.sql.Encoder
 import org.apache.spark.sql.SparkSession
@@ -65,7 +67,7 @@ object LoadDataDS {
 
     // use partitioed parquetfiles, partition by year
     val parquetfolder = Paths.get(derivS3bucket, folder).toString
-    val timerange = 2000 to 2001
+    val timerange = 2000 to 2008
     // val timerange = null
     // val filenames = for (yr <- yrs) yield filename + yr.toString + fileext
 
@@ -125,8 +127,8 @@ object LoadDataDS {
       // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[esclass]
       // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[fcl2cpc]
       // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
-      // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass2]
-      val classDS = spark.read.option("header", true).format("csv").load(textfile)
+      val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
+      // val classDS = spark.read.option("header", true).format("csv").load(textfile)
 
       classDS.repartition(8).write.mode("overwrite").parquet(parquetfile)
     }
