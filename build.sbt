@@ -9,6 +9,7 @@ libraryDependencies ++= Seq(
   // "org.apache.spark" %% "spark-core" % "2.1.0-SNAPSHOT"
   // "org.apache.spark" %% "spark-core" % "2.1.0"
   // "org.apache.spark" % "spark-core_2.10" % "1.0.0"
+  "com.google.code.findbugs" % "jsr305" % "3.0.0",
   "org.apache.spark" % "spark-core_2.11" % "2.0.0",
   "org.apache.spark" % "spark-sql_2.11" % "2.0.0",
   "org.apache.spark" % "spark-hive_2.11" % "2.0.0",
@@ -21,5 +22,6 @@ libraryDependencies ++= Seq(
 )
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
+// resolvers += "maven2" at "http://central.maven.org/maven2/"
 
 excludeFilter in Compile in unmanagedSources := ".#*" || "FromXml.scala"
