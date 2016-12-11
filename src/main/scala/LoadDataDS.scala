@@ -1,7 +1,7 @@
 package controller.load
 
 // activator "run-main controller.load.LoadDataDS"
-    
+
 // import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder
 // import org.apache.spark.sql.Encoder
 import org.apache.spark.sql.SparkSession
@@ -9,7 +9,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
 import java.nio.file._
 // import java.io.File
-  // import models.fcl2cpc
+// import models.fcl2cpc
 import models._
 // import models.esclass
 // import models.tlclass
@@ -37,7 +37,7 @@ object LoadDataDS {
       // .config("spark.sql.parquet.compression.codec", "gzip")
       .config("spark.sql.parquet.compression.codec", "snappy")
       .config("spark.sql.warehouse.dir", warehouseLocation)
-      .config("spark.local.dir", "/home/z930/spark/tmp")
+      // .config("spark.local.dir", "/home/z930/spark/tmp")
       // .enableHiveSupport()
       .getOrCreate()
 
@@ -115,8 +115,8 @@ object LoadDataDS {
   private def runMultipleTextToParquet(spark: SparkSession, origS3bucket: String, fileprefix: String, fileext: String, timerange: Range, parquetfolder: String): Unit = {
 
     // val origS3bucket = sys.env("AWS_S3_BUCKET_ORIGINAL")
-    val year = 2014
-    val fileext = "_top10.csv"
+    // val year = 2014
+    // val fileext = "_top10.csv"
 
     import spark.implicits._
     for (year <- timerange.toArray) {
