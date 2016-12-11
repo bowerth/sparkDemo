@@ -68,5 +68,7 @@ object QueryDataDS {
 
     }
 
+    spark.stop
+
   }
 }

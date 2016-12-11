@@ -22,10 +22,11 @@ object LoadDataDS {
 
   def main(args: Array[String]): Unit = {
 
-    val origDir = Paths.get(sys.env("DRYFAOFBS"), "data", "original").toString
+    // val origDir = Paths.get(sys.env("DRYFAOFBS"), "data", "original").toString // not required any more
     val warehouseLocation = sys.env("SPARK_WAREHOUSE")
     val derivS3bucket = sys.env("AWS_S3_BUCKET_DERIVED")
     val origS3bucket = sys.env("AWS_S3_BUCKET_ORIGINAL")
+    // val origS3bucket = "/home/z930/Downloads/us-west-2-original"
     // sqlContext.setConf("spark.sql.parquet.compression.codec", "snappy")
     // %sql set spark.sql.parquet.compression.codec=snappy
 
@@ -36,6 +37,7 @@ object LoadDataDS {
       // .config("spark.sql.parquet.compression.codec", "gzip")
       .config("spark.sql.parquet.compression.codec", "snappy")
       .config("spark.sql.warehouse.dir", warehouseLocation)
+      .config("spark.local.dir", "/home/z930/spark/tmp")
       // .enableHiveSupport()
       .getOrCreate()
 
@@ -67,7 +69,7 @@ object LoadDataDS {
 
     // use partitioed parquetfiles, partition by year
     val parquetfolder = Paths.get(derivS3bucket, folder).toString
-    val timerange = 2000 to 2008
+    val timerange = 2001 to 2014
     // val timerange = null
     // val filenames = for (yr <- yrs) yield filename + yr.toString + fileext
 
@@ -92,7 +94,7 @@ object LoadDataDS {
     //                    ht: String)
 
 
-    runMultipleTextToParquet(spark = spark, origS3bucket = sys.env("AWS_S3_BUCKET_ORIGINAL"), fileprefix = fileprefix, fileext = fileext, timerange = timerange, parquetfolder = parquetfolder)
+    runMultipleTextToParquet(spark = spark, origS3bucket = origS3bucket, fileprefix = fileprefix, fileext = fileext, timerange = timerange, parquetfolder = parquetfolder)
 
     // no time period, e.g. hsfclmap
     // runTextToParquet(spark = spark, origS3bucket = sys.env("AWS_S3_BUCKET_ORIGINAL"), fileprefix = fileprefix, fileext = fileext, parquetfolder = parquetfolder)
@@ -113,6 +115,8 @@ object LoadDataDS {
   private def runMultipleTextToParquet(spark: SparkSession, origS3bucket: String, fileprefix: String, fileext: String, timerange: Range, parquetfolder: String): Unit = {
 
     // val origS3bucket = sys.env("AWS_S3_BUCKET_ORIGINAL")
+    val year = 2014
+    val fileext = "_top10.csv"
 
     import spark.implicits._
     for (year <- timerange.toArray) {
@@ -124,10 +128,19 @@ object LoadDataDS {
       val parquetfile = Paths.get(parquetfolder, subfolder).toString
       // runTextToParquet(spark = spark, textfile = textfile, parquetfile = parquetfile)
 
+      val schema = Seq[tlclass]().toDF.schema
+      // import org.apache.spark.sql.catalyst.ScalaReflection
+      // val schema = ScalaReflection.schemaFor[tlclass].dataType.asInstanceOf[StructType]
+
       // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[esclass]
       // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[fcl2cpc]
       // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
-      val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
+      // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
+      // val classDS = spark.read.format("csv").option("header", true).option("inferSchema", "true").load(textfile)
+      val classDS = spark.read.schema(schema).option("header", true).format("csv").load(textfile).as[tlclass]
+      // classDS.printSchema()
+      // classDS.as[tlclass]
+      // classDS.printSchema()
       // val classDS = spark.read.option("header", true).format("csv").load(textfile)
 
       classDS.repartition(8).write.mode("overwrite").parquet(parquetfile)
