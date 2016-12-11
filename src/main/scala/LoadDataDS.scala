@@ -22,8 +22,8 @@ object LoadDataDS {
 
   def main(args: Array[String]): Unit = {
 
-    // val origDir = Paths.get(sys.env("DRYFAOFBS"), "data", "original").toString // not required any more
     val warehouseLocation = sys.env("SPARK_WAREHOUSE")
+    // val warehouseLocation = "/home/xps13/spark/spark-warehouse"
     val derivS3bucket = sys.env("AWS_S3_BUCKET_DERIVED")
     val origS3bucket = sys.env("AWS_S3_BUCKET_ORIGINAL")
     // val origS3bucket = "/home/z930/Downloads/us-west-2-original"
@@ -69,7 +69,7 @@ object LoadDataDS {
 
     // use partitioed parquetfiles, partition by year
     val parquetfolder = Paths.get(derivS3bucket, folder).toString
-    val timerange = 2001 to 2014
+    val timerange = 2004 to 2004
     // val timerange = null
     // val filenames = for (yr <- yrs) yield filename + yr.toString + fileext
 
@@ -114,11 +114,36 @@ object LoadDataDS {
   // private def runTextToParquet(spark: SparkSession, textfile: String, parquetfile: String): Unit = {
   private def runMultipleTextToParquet(spark: SparkSession, origS3bucket: String, fileprefix: String, fileext: String, timerange: Range, parquetfolder: String): Unit = {
 
+    import spark.implicits._
+
     // val origS3bucket = sys.env("AWS_S3_BUCKET_ORIGINAL")
     // val year = 2014
     // val fileext = "_top10.csv"
 
-    import spark.implicits._
+    // if (fileprefix == "ct_tariffline_unlogged_") {
+    //   import models.{tlclass => dsclass}
+    // }
+
+    def matchClass(x: String): StructType = x match {
+      // case "ct_tariffline_unlogged_" => tlclass
+      // case "ce_combinednomenclature_unlogged_" => esclass
+      case "ct_tariffline_unlogged_" => Seq[tlclass]().toDF.schema
+      case "ce_combinednomenclature_unlogged_" => Seq[esclass]().toDF.schema
+      case _ => throw new NoSuchMethodException
+    }
+    // println(matchClass("ct_tariffline_unlogged_"))
+
+
+    def matchHS(x: String): Symbol = x match {
+      case "ct_tariffline_unlogged_" => 'comm
+      case "ce_combinednomenclature_unlogged_" => 'comm
+      case _ => throw new NoSuchMethodException
+    }
+
+    // val dsclass = matchClass(fileprefix)
+    val DSschema = matchClass(fileprefix)
+    val DScolumn = matchHS(fileprefix)
+
     for (year <- timerange.toArray) {
       val filename = fileprefix + year.toString + fileext
       val textfile = Paths.get(origS3bucket, filename).toString
@@ -128,7 +153,6 @@ object LoadDataDS {
       val parquetfile = Paths.get(parquetfolder, subfolder).toString
       // runTextToParquet(spark = spark, textfile = textfile, parquetfile = parquetfile)
 
-      val schema = Seq[tlclass]().toDF.schema
       // import org.apache.spark.sql.catalyst.ScalaReflection
       // val schema = ScalaReflection.schemaFor[tlclass].dataType.asInstanceOf[StructType]
 
@@ -137,13 +161,32 @@ object LoadDataDS {
       // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
       // val classDS = spark.read.option("header", true).format("csv").load(textfile).as[tlclass]
       // val classDS = spark.read.format("csv").option("header", true).option("inferSchema", "true").load(textfile)
-      val classDS = spark.read.schema(schema).option("header", true).format("csv").load(textfile).as[tlclass]
-      // classDS.printSchema()
-      // classDS.as[tlclass]
-      // classDS.printSchema()
+      // val classDS = spark.read.schema(DSschema).option("header", true).format("csv").load(textfile).as[tlclass]
+
+      val classDS = spark.read
+        .schema(DSschema)
+        .option("header", true)
+        .option("nullValue","NA")
+        .format("csv")
+        .load(textfile)
+        .as[tlclass]
+
+      // val classDS = classDSuntyped.as[tlclass]
+
+
       // val classDS = spark.read.option("header", true).format("csv").load(textfile)
 
-      classDS.repartition(8).write.mode("overwrite").parquet(parquetfile)
+      // Define a regular Scala function
+      val substr2: String => String = _.substring(0, 2)
+
+      // Define a UDF that wraps the upper Scala function defined above
+      // separating Scala functions from Spark SQL's UDFs allows for easier testing
+      import org.apache.spark.sql.functions.udf
+      val substr2UDF = udf(substr2)
+      // classDS.withColumn("chapter", substr2UDF('comm)).show
+      val classDS2 = classDS.withColumn("chapter", substr2UDF(DScolumn))
+
+      classDS2.repartition(8).write.mode("overwrite").parquet(parquetfile)
     }
 
     // val parquetfile = textfile.replace(".csv", ".parquet").replace(".dat", ".parquet")
